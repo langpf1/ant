@@ -1,0 +1,180 @@
+<?xml version="1.0"?>
+<project name="esb_server" default="runTask" basedir=".">
+
+	<property file="build_serv.properties"/>
+
+	<path id="esbAllLib">
+
+		<fileset dir="${baseloc_dir}/dropins">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${baseloc_dir}/plugins">
+			<include name="**/*.jar" />
+		</fileset>
+		<!--
+		<fileset dir="${build_dir}/server/plugins">
+			<include name="**/*.class"/>
+		</fileset>
+		-->
+	</path>
+
+	<path id="esbExtLib">
+		<fileset dir="${server_plugins}/">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<path id="uatlib">
+		<fileset dir="${uat_lib}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<path id="extlib">
+		<fileset dir="${extlib}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+
+	<taskdef classpathref="uatlib" resource="tasks.properties" />
+	<taskdef classpathref="uatlib" resource="testngtasks" />
+
+	<target name="clean">
+		<delete dir="${classes_src}"/>
+		<delete dir="${classes_test}"/>
+		<delete dir="${classes_instrumented}"/>
+		<delete dir="${cobertura.xml.dir}"/>
+		<delete dir="${cobertura.html.dir}"/>
+	</target>
+
+	<target name="init">
+		<mkdir dir="${classes_src}" />
+		<mkdir dir="${classes_test}" />
+		<mkdir dir="${classes_instrumented}" />
+		<mkdir dir="${cobertura.xml.dir}" />
+		<mkdir dir="${cobertura.html.dir}" />
+		<copy todir="${testng.output.dir}" file="./emailable-report.html"/>
+	</target>
+
+	<!--
+	<target name="copyClassses">
+			<copydir dest="${classes_src}" src="${server_plugins}/**/@dot"></copydir>
+		<copy todir="${classes_src}" >
+			<fileset dir="${server_plugins}">
+				<include name="**/@dot/com"/>
+			</fileset>
+		</copy>
+	</target>
+	-->
+
+	<!--
+	<target name="updateView">
+		<ccupdate viewpath="${esb_view}" graphical="false" log="log.log" overwrite="true" currenttime="ture" rename="false" />
+	</target>
+-->
+	
+	<target name="copyProject">
+		<!--	<copydir dest="${classes_src}" src="${server_plugins}/**/@dot"></copydir> -->
+		<copydir dest="D:/kongxl/hudsonhome/jobs/WORKFLOW/workspace" src="D:/kongxl/View/TEMP_WORKFLOW_dev/NC6_UAP_VOB/UAP_TEMP_WORKFLOW/workflow">
+		</copydir>
+	</target>
+
+	<target name="runTask">
+		<antcall target="clean" />
+		<antcall target="init" />
+		<antcall target="complete_testSrc" />
+		<antcall target="copySource" />		
+		<antcall target="instrument" />
+		<antcall target="initTestXml" />
+		<antcall target="runTest" />
+		<antcall target="xml-coverage-report" />
+		<antcall target="html-coverage-report" />
+	</target>
+
+	<target name="complete_testSrc">
+		<javac srcdir="${server_plugins}" destdir="${classes_test}" encoding="GBK">
+			<include name="**/testsrc/**/*.java"/>
+			<exclude name="**/com.ufida.eip.archives/**/testsrc/**/*.java"/>
+			<classpath refid="esbAllLib"/>
+			<classpath refid="esbExtLib"/>
+			<classpath refid="uatlib"/>
+		</javac>
+	</target>
+	
+	<target name="copySource">
+		<copy todir="./source">
+			<fileset dir="D:/kongxl/hudsonhome/jobs/ESB_BUILD/workspace/esbbuild/6.3/builddir/server/plugins">
+				<exclude name="**/*.java"/>
+				<exclude name="**/*.class"/>
+				<include name="**/testsrc/**/*.*"/>
+			</fileset>
+		<regexpmapper from="(.+)\\testsrc\\(.+)" to="\2" />
+		</copy>
+	
+	</target>
+
+	<target name="instrument">
+		<delete file="${cobertura.datafile}" />
+		<cobertura-instrument todir="${classes_instrumented}">
+			<ignore regex="org.apache.log4j.*" />
+			<fileset dir="${build_dir}/server/plugins">
+				<include name="**/*.class" />
+			</fileset>
+		</cobertura-instrument>
+	</target>
+
+
+	
+	<target name="initTestXml">
+		<echo message="init testng xml............................."/>
+		<java classname="com.yonyou.uat.ant.GetPackage">
+			<arg value="${testng_file}"/>
+			<arg value="${classes_test}"/>
+			<classpath refid="uatlib"/>
+		</java>
+	</target>
+
+
+	<target name="runTest">
+
+		<java fork="false" classname="org.testng.TestNG">
+			<!---->
+			<sysproperty key="net.sourceforge.cobertura.datafile" file="${cobertura.datafile}" />
+			<classpath location="${classes_instrumented}/" />
+			<classpath location="${classes_test}" />
+			<classpath location="./source"/>
+			<classpath refid="esbAllLib" />
+			<classpath refid="esbExtLib" />
+			<classpath refid="uatlib" />
+			<classpath refid="extlib" />
+			<arg value="${testng_file}" />
+		</java>
+	</target>
+
+		
+	<target name="xml-coverage-report">
+		<cobertura-report destdir="${cobertura.xml.dir}" format="xml">
+			<include name="${build_dir}/server/plugins/**/src/**/*.java" />
+		</cobertura-report>
+	</target>
+
+
+	<target name="html-coverage-report">
+		<cobertura-report destdir="${cobertura.html.dir}" format="html">
+
+			<include name="${build_dir}/server/plugins/**/src/**/*.java" />
+
+		</cobertura-report>
+	</target>
+	
+
+	<target name="importTestResult" description="importTestResult">
+        <echo message="import testResult"></echo>
+    	<exec dir="D:\kongxl\ptr\" executable="cmd">
+    		   	        <arg line="/c ptrer.bat ESB_SERVER"/>
+    	 </exec>
+    </target>
+
+</project>
+

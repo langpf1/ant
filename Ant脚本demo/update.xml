@@ -1,0 +1,54 @@
+<macrodef name = "git">
+  <attribute name = "command" />
+  <attribute name = "dir"default = "." />
+  <element name = "args" optional = "true" />
+
+  <sequential>
+     <echo message = "git @{command}" />
+     <exec executable = "git" dir = "@{dir}">
+        <arg value = "@{command}" />
+        <args/>
+     </exec>
+  </sequential>
+
+</macrodef>
+
+
+<macrodef name = "git-clone-pull">
+  <attribute name = "repository" />
+  <attribute name = "dest" />
+  <sequential>
+     <git command = "clone">
+        <args>
+           <arg value = "@{repository}" />
+           <arg value = "@{dest}" />
+        </args>
+     </git>
+
+     <git command = "pull" dir = "@{dest}" />
+  </sequential>
+</macrodef>
+
+<!--
+The first one, ¡°git¡± just runs git with whatever command you provide to it (clone, pull, etc)
+along with any arguments you pass to it. Clone:
+-->
+<git command = "clone">
+  <args>
+     <arg value = "git://github.com/280north/ojunit.git" />
+     <arg value = "ojunit" />
+  </args>
+</git>
+
+<!--And pull:-->
+<git command = "pull" dir = "repository_path" />
+<!--
+  (Other git command will likely work, these are just the ones I needed)
+  The second one, ¡°git-clone-pull¡± uses the first one to clone a repository then pull from it.
+This effectively clones the repository if it hasn¡¯t already been cloned,otherwise it pulls.
+  However,since ant is fairly limited in what sorts of conditional execution you can perform, 
+it just does both (clone will fail if it¡¯s already been cloned, and pull will always be executed, 
+even immediately after a the initial clone).
+  Obviously not ideal, but it works, and I couldn¡¯t figure out a better way without writing actual code.
+-->
+<git-clone-pull repository="git://github.com/280north/ojunit.git" dest="ojunit" />

@@ -1,0 +1,21 @@
+<project name="RDI" default="main" basedir=".">
+
+<macrodef name = "git-clone-pull">
+  <attribute name = "repository" />
+  <attribute name = "dest" />
+  <sequential>
+     <git command = "clone">
+        <args>
+           <arg value = "@{repository}" />
+           <arg value = "@{dest}" />
+        </args>
+     </git>
+  </sequential>
+</macrodef>
+
+<target name="rdi_clone">
+   <git_clone modules="${}" />
+</target>
+
+<git-clone-pull repository="git://github.com/280north/ojunit.git" dest="ojunit" />
+

@@ -1,0 +1,18 @@
+dist:盘
+archive:打包文件(档案，存档)
+
+fork参数：为true时，在新的JVM实例中运行，不影响当前JVM工作
+
+1.Ant脚本如何移动文件夹？
+<move todir="d:/ci/ae_rdi/dist" >
+  <fileset dir="${dist.dir}" />
+</move>
+
+2.在依赖class类文件的时候应写<classpath location="${class.core}" />，而不应写成<classpath location="${class.core}  " />这种形式，即后面不能有空格！
+			
+3. <javac source="1.6" target="1.6" srcdir="../android/src" destdir="../android/temp/classes" includeantruntime="false">
+   </javac>
+   :target=1.6:编译的目标版本为1.6
+
+4.<path id="project.class.path">
+<pathelement location="${jdk.home}/jre/lib/rt.jar" />

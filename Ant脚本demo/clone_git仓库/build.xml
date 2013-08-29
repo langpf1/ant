@@ -1,0 +1,11 @@
+<project name="RDI" default="pull" basedir=".">
+
+  <property name="git.pull.script" value="./gitpull.txt"/>
+  <property name="git.umbuildserver" value="."/>
+
+  <target name="pull">
+     <exec executable="cmd.exe" dir="${git.umbuildserver}">
+        <arg line="/c 'C:/Git/bin/sh.exe --login -i ${git.pull.script}'"/>
+     </exec>
+  </target>
+</project>
