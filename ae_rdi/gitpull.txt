@@ -1,0 +1,1 @@
+git pull git@20.10.1.195:ae_group/rdi.git develop

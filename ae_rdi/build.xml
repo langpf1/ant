@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="ae_rdi" default="mainTarget" basedir=".">
+
+    <property file="build.properties" />
+
+    <property environment="env" />
+	<property name="java.home.dir" value="${env.JAVA_HOME}" />
+   
+    <!--depended jars dir-->
+	<path id="build.classpath">
+	   
+        <pathelement path="${env.JAVA_HOME}/lib/tools.jar" />
+		<pathelement path="${env.JAVA_HOME}/lib/jconsole.jar" />
+         
+       	<fileset dir="${root.src.mq}">
+		   <include name="**/*.jar" />
+		   <!--include name="apache-activemq-5.5.0/activemq-all-5.5.0.jar" />
+		   <include name="apache-activemq-5.5.0/lib/optional/*.jar" />
+           <include name="apache-activemq-5.5.0/lib/web/*.jar" /-->
+		</fileset>
+		
+		<fileset dir="${root.src.hibernate}">
+		   <include name="**/*.jar" />
+		   <include name="**/lib/required/*.jar" />
+		   <include name="**/lib/jpa/*.jar" />
+		</fileset>
+
+        <fileset dir="${root.src.lib.external}">
+		   <include name="*.jar" />
+		</fileset>
+	</path>
+	
+	<!--从git上更新代码+++++++++++++++++++++++++++++++++++-->
+    <target name="code_syn">
+       <echo message="synchronizing source code begin!"></echo>
+	  
+       <exec executable="cmd.exe" dir="${root.src}">
+          <arg line="/c 'C:/Git/bin/sh.exe --login -i ${git.pull.rdi}'"/>
+       </exec>
+
+	   <echo message="synchronizing source code end!"></echo>
+    </target>
+    
+	<!--clean the last copiling dir-->
+	<target name="clean">
+		<delete dir="${root.build.class}" includeEmptyDirs="true" />
+		<delete dir="${root.build.injectclass}" includeEmptyDirs="true" />
+		<delete dir="${root.build.jar}" includeEmptyDirs="true" />
+		<delete dir="${root.build.testclass}" includeEmptyDirs="true" />
+		<delete dir="${root.build.rdi}" includeEmptyDirs="true" />
+		<delete dir="${root.build.org}" includeEmptyDirs="true" />
+		<delete dir="${root.build.console}" includeEmptyDirs="true" />
+    </target>
+
+    <!--the prepareration work before compiling-->
+	<target name="code_compile_prepare">
+		<mkdir dir="${root.build}" />
+		
+		<mkdir dir="${root.build.class}" />
+		<mkdir dir="${root.build.injectclass}" />
+		<mkdir dir="${root.build.jar}" />
+		<mkdir dir="${root.build.testclass}" />
+
+		<mkdir dir="${root.build.console}" />		
+        
+		<mkdir dir="${class.gearman}" />
+		<mkdir dir="${class.gearman.org}" />
+
+		<mkdir dir="${class.rdi}" />
+		<mkdir dir="${class.rdi.common}" />
+		<mkdir dir="${class.rdi.source}" />
+		<mkdir dir="${class.rdi.target}" />
+		<mkdir dir="${class.rdi.console}" />
+		<mkdir dir="${class.rdi.console.resource}" />
+		<mkdir dir="${class.rdi.tools}" />
+		<mkdir dir="${class.rdi.tools.configuration}" />
+		<mkdir dir="${class.rdi.tools.configuration.file}" />
+		<!--
+		<mkdir dir="${class.rdi.tools.configuration.lang}" />
+        -->
+		<mkdir dir="${class.rdi.common}/rdi" />
+		<mkdir dir="${class.rdi.common.rdi.common}" />
+		<mkdir dir="${class.rdi.source}/rdi" />
+		<mkdir dir="${class.rdi.source.rdi.source}" />
+		<mkdir dir="${class.rdi.target}/rdi" />
+		<mkdir dir="${class.rdi.target.rdi.target}" />
+		<mkdir dir="${class.rdi.console}/rdi" />
+		<mkdir dir="${class.rdi.console.rdi.console}" />
+		
+		<mkdir dir="${class.rdi.tools.configuration}/rdi" />
+		<mkdir dir="${class.rdi.tools.configuration}/rdi/tools" />
+		<mkdir dir="${class.rdi.tools.configuration.rdi.tools.configuration}" />
+	</target>
+    
+	<!--the version descripsion-->
+	<target name="version">
+	    <tstamp>
+			<format property="DSTAMP" pattern="yyyy-MM-dd"/>
+			<format property="TSTAMP" pattern="HH:mm:ss" offset="10" unit="second"/>
+		</tstamp>
+		<echo file="${version.dir}" message="version=2.0"/>
+		<echo file="${version.dir}" append="true">&#xA;</echo>
+		<echo file="${version.dir}" append="true">build=</echo>
+		<echo file="${version.dir}" append="true">${DSTAMP} ${TSTAMP}</echo>
+	</target>
+
+    <!--compiling the whole src code+++++++++++++++++++++++++++++++++++++++++++++++++++++++++-->
+	<target name="code_compile" depends="clean,code_compile_prepare,version" >
+		<echo message="compiling source code begin!"></echo>
+	  
+		<javac srcdir="${project.src}" destdir="${root.build}" source="1.6" encoding="GBK" debug="true" debuglevel="lines,vars,source" includeantruntime="true">
+		    <classpath refid="build.classpath"></classpath>
+		</javac>
+		
+        <echo message="compiling source code end!"></echo>
+	</target>
+
+    <!--对项目需要统计覆盖度的源代码,进行cobertura注入编译+++++++++++++++++++++++++++++++++-->
+	<target name="inject_compile" description="injected source code is compiling!">
+        <echo message="injected source code is compiling begin!"></echo>
+		<!--
+		<delete file="${cobertura.datafile}"/>
+		<mkdir dir="${temp.inject.class}" />
+		<javac srcdir="${project.olap}/src" destdir="${temp.inject.class}" debug="true" encoding="GBK">
+			<include name="*.java" />
+						
+			<classpath location="${root.build.class}" />
+			<classpath refid="uap.classpath" />	
+		</javac>
+		<cobertura-instrument todir="${root.build.injectclass}">
+			<ignore regex="org.apache.log4j.*" />
+			<fileset dir="${temp.inject.class}">
+				<include name="**/*.class" />
+			</fileset>
+		</cobertura-instrument>
+        <delete dir="${temp.inject.class}" />
+		-->
+		<echo message="injected source code is compiling end!"></echo>
+	</target>	
+    
+    <!--编译测试代码+++++++++++++++++++++++++++++++++++++++-->
+	<target name="test_compile" depends="inject_compile" description="tested source code is compiling!">
+        <echo message="tested source code is compiling begin!"></echo>
+		<!--例如
+		<javac srcdir="${project.olap}/src" destdir="${root.build.testclass}" encoding="GBK" debug="true">
+			<include name="/test/**/*.java" />
+			<classpath refid="uap.classpath" />
+			<classpath refid="uat.classpath" />
+			<classpath location="${root.build.class}" />
+		</javac-->
+        <echo message="tested source code is compiling end!"></echo>
+    </target>
+    
+    <!--复制项目测试用例源代码中的资源文件-->
+	<target name="copyTestResFile" description="copy tested resource fiels!">
+	    <echo message="copy tested resource fiels begin!"/>
+		<!--例如
+		<copy todir="${root.build.testclass}/resources">
+			<fileset dir="${project.olap}/src/test/resources">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy-->
+		<!--
+		<delete file="./testng.xml" includeEmptyDirs="true"/>
+		<copy todir=".">
+			<fileset dir="${project.test}">
+				<include name="testng.xml" />
+			</fileset>
+		</copy>
+		-->
+		<echo message="copy tested resource fiels end!"/>
+	</target>
+
+    <!--运行白盒测试+++++++++++++++++++++++++++++++++++++++++++-->
+	<target name="runtest" depends="copyTestResFile" description="running testCase!">
+		<echo message="running testCase begin!"/>
+		<!--
+		<java fork="false" classname="org.testng.TestNG">
+			<sysproperty key="net.sourceforge.cobertura.datafile" file="${cobertura.datafile}" />
+			<classpath location="${root.build.injectclass}/" />
+			<classpath location="${root.build.test}" />
+			<classpath location="${root.build.class}"/>
+			<classpath refid="uap.classpath" />
+			<classpath refid="uat.classpath" />
+			<arg value="${testng.file}" />
+		</java>		
+		-->
+		<echo message="running testCase end!"/>
+	</target>
+
+    <!--采集测试数据-->
+	<target name="collect">
+		<echo message="running cobertura begin!" />	
+		<antcall target="coverage-xml-report"/>
+		<antcall target="coverage-html-report"/>
+		<echo message="running cobertura end!"/>
+
+		<echo message="collecting test data begin!"></echo>
+        <exec dir="D:/ci/ptr" executable="cmd">
+             <arg line="/c ptrer.bat AE_RDI"/>
+        </exec>
+		<echo message="collecting test data end!"></echo>
+	</target>
+
+    <!--xml形式的覆盖度报告-->
+	<target name="coverage-xml-report">
+		<cobertura-report destdir="${cobertura.xml.dir}" format="xml">
+			<include name="${project.olap}/src/**/*.java" />
+			<exclude name="${project.olap}/src/test/**/*.java" />
+		</cobertura-report>
+	</target>
+
+    <!--html形式的覆盖度报告-->
+	<target name="coverage-html-report">
+		<cobertura-report destdir="${cobertura.html.dir}" format="html">
+			<include name="${project.olap}/src/**/*.java" />
+			<exclude name="${project.olap}/src/test/**/*.java" />
+		</cobertura-report>
+	</target>
+
+	<!--copy the source files of the source code -->
+	<target name="copySrcResFile" description="copy project resource fiels!" >
+		
+		<copy todir="${root.build}">
+			<fileset dir="${project.src}">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+        <!--
+		<copy todir="${build.rdi.console.resource}">
+			<fileset dir="${project.console.resource}" />
+		</copy>
+		
+		<copy todir="${build.rdi.tools.configuration.file}">
+			<fileset dir="${project.tools.configuration.file}" />
+		</copy>
+
+		<copy todir="${build.rdi.tools.configuration.lang}">
+			<fileset dir="${project.tools.configuration.lang}" />
+		</copy>-->
+	</target>
+    
+    <target name="move">
+        <copy todir="${class.gearman.org}">
+			<fileset dir="${root.build.org}" />
+		</copy>
+		<copy todir="${class.rdi.common.rdi.common}">
+			<fileset dir="${build.rdi.common}" />
+		</copy>
+		<copy todir="${class.rdi.source.rdi.source}">
+			<fileset dir="${build.rdi.source}" />
+		</copy>
+		<copy todir="${class.rdi.target.rdi.target}">
+			<fileset dir="${build.rdi.target}" />
+		</copy>
+		<copy todir="${class.rdi.console.rdi.console}">
+			<fileset dir="${build.rdi.console}" />
+		</copy>
+		<copy todir="${class.rdi.tools.configuration.rdi.tools.configuration}">
+			<fileset dir="${build.rdi.tools.configuration}" />
+		</copy>
+	</target>
+
+    <!--build the class files which were made on compiled,produce the jar files+++++++++++++++++++++++++++++++++++++++++++-->
+	<target name="dopackage" depends="copySrcResFile,move" description="building jar by classed files!">
+		<echo message="building jar by classed files begin!"></echo>
+		
+		<jar basedir="${class.gearman}" jarfile="${root.build.jar}/${gearman.jar.name}" />
+		<jar basedir="${class.rdi.common}" jarfile="${root.build.jar}/${common.jar.name}" />
+		<jar basedir="${class.rdi.source}" jarfile="${root.build.jar}/${source.jar.name}" />
+		<jar basedir="${class.rdi.target}" jarfile="${root.build.jar}/${target.jar.name}" />
+		<jar basedir="${class.rdi.console}" jarfile="${root.build.jar}/${console.jar.name}" />
+		<jar basedir="${class.rdi.tools.configuration}" jarfile="${root.build.jar}/${configuration.jar.name}" />
+
+		<echo message="building jar by classed files end!"></echo>
+	</target>
+
+    <target name="make_disk_prepare">
+        <delete dir="${root.build.disk}" includeEmptyDirs="true" />
+	    <mkdir dir="${root.build.disk}" />
+		<mkdir dir="${root.build.disk.bin}" />
+		<mkdir dir="${root.build.disk.lib}" />
+		<mkdir dir="${root.build.disk.scripts}" />
+		<mkdir dir="${root.build.disk.console}" />
+		<mkdir dir="${root.build.disk.doc}" />
+		<mkdir dir="${root.build.disk.mq}" />
+		<mkdir dir="${root.build.disk.hibernate}" />
+		<mkdir dir="${root.build.disk.server.home}" />
+	</target>
+
+	<!--make disk++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-->
+	<target name="disk" depends="make_disk_prepare" >
+        <echo message="making installed disk begin!"></echo>
+
+	    <copydir src="${root.src.lib}" dest="${root.build.disk.lib}" />
+        <copydir src="${root.src.scripts}" dest="${root.build.disk.scripts}" />
+	   	<copydir src="${root.build.console}" dest="${root.build.disk.console}" />
+		<copydir src="${root.src.doc}" dest="${root.build.disk.doc}" />
+		<copydir src="${root.src.mq}" dest="${root.build.disk.mq}" />
+		<copydir src="${root.src.hibernate}" dest="${root.build.disk.hibernate}" />
+		<copydir src="${root.src.server.home}" dest="${root.build.disk.server.home}" />
+		
+		
+        <copy file="${root.src.scripts}/rdi.bat" todir="${root.build.disk.bin}"/>
+		<copy file="${root.src.scripts}/rdi.sh" todir="${root.build.disk.bin}"/>
+		<copy file="${root.src.scripts}/start_all.sh" todir="${root.build.disk.bin}"/>
+		<copy file="${root.src.scripts}/stop_all.sh" todir="${root.build.disk.bin}"/>
+		<copy file="${root.src.scripts}/rdiconf.bat" todir="${root.build.disk.bin}"/>
+                		
+		<copy file="${root.src.scripts}/console.bat" todir="${root.build.disk.console}"/>
+		
+		<copy file="${root.build.jar}/${gearman.jar.name}" todir="${root.build.disk.lib}" />
+		<copy file="${root.build.jar}/${common.jar.name}" todir="${root.build.disk.lib}" />
+		<copy file="${root.build.jar}/${source.jar.name}" todir="${root.build.disk.lib}" />
+		<copy file="${root.build.jar}/${target.jar.name}" todir="${root.build.disk.lib}" />
+		<copy file="${root.build.jar}/${console.jar.name}" todir="${root.build.disk.lib}" />
+		<copy file="${root.build.jar}/${configuration.jar.name}" todir="${root.build.disk.lib}" />
+				
+		<copy file="${root.build.jar}/${common.jar.name}" todir="${root.build.disk.console}" />
+		<copy file="${root.build.jar}/${console.jar.name}" todir="${root.build.disk.console}" />
+		
+        <copy file="${root.src.hibernate}/hibernate-distribution-3.6.3.Final/hibernate3.jar" todir="${root.build.disk.console}" />
+		<copy file="${root.src.hibernate}/hibernate-distribution-3.6.3.Final/lib/required/dom4j-1.6.1.jar" todir="${root.build.disk.console}" />
+		<copy file="${root.src.hibernate}/hibernate-distribution-3.6.3.Final/lib/required/slf4j-api-1.6.1.jar" todir="${root.build.disk.console}" />
+		
+		<copy file="${root.src.lib.external}/disruptor3.0.1.jar" todir="${root.build.disk.console}" />
+		<copy file="${root.src.lib.external}/log4j-1.2-api-2.0-beta7.jar" todir="${root.build.disk.console}" />
+		<copy file="${root.src.lib.external}/log4j-api-2.0-beta7.jar" todir="${root.build.disk.console}" />
+		<copy file="${root.src.lib.external}/log4j-core-2.0-beta7.jar" todir="${root.build.disk.console}" />
+		<copy file="${root.src.lib.external}/mail.jar" todir="${root.build.disk.console}" />
+		<!--<copy file="${root.src.lib.external}/orato8a-client_1.8.jar" todir="${root.build.disk.console}" />-->
+
+		<copy file="${root.src.mq}/apache-activemq-5.5.0/lib/optional/xstream-1.3.1.jar" todir="${root.build.disk.console}" />
+
+	    <mkdir dir="${root.build.disk.server.home}/conf/datasource" />
+		<mkdir dir="${root.build.disk.server.home}/conf/tableMapping" />
+		<mkdir dir="${root.build.disk.server.home}/conf/mail" />
+		<mkdir dir="${root.build.disk.server.home}/conf/lang" />
+		<mkdir dir="${root.build.disk.server.home}/deploy" />
+		<mkdir dir="${root.build.disk.server.home}/log" />
+   
+        <copy todir="${root.build.disk.server.home}/conf/lang" >
+		   <fileset dir="${root.src.server.home}/conf/lang" />
+		</copy>
+
+		<echo message="making installed disk end!"></echo>
+    </target>
+	
+	<!--部署,负责在指定环境进行安装部署产品++++++++++++++++++++++++++++++++++-->
+	<target name="deploy" description="deploying project!">
+        <echo message="deploying project begin!"></echo>
+
+        <echo message="deploying project end!"></echo>
+    </target>
+
+    <!--验证,负责调用执行自动化测试脚本,验证安装后的产品业务功能正确性+++++++++++++++++++++++++++++++-->
+	<target name="verify" description="verifying automated testing script!">
+        <echo message="verifying automated testing script begin!"></echo>
+
+        <echo message="verifying automated testing script end!"></echo>
+    </target>
+	
+    <!--default target-->
+    <target name="mainTarget" description="main target!">
+        <antcall target="code_syn"/>
+		<antcall target="code_compile"/>
+        <antcall target="inject_compile"/>
+		<antcall target="test_compile"/>
+		<antcall target="runtest"/>
+		<antcall target="dopackage"/>
+		<antcall target="disk"/>
+		<antcall target="deploy"/>
+		<antcall target="verify"/>		
+	</target>
+</project>
